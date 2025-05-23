@@ -1,0 +1,92 @@
+lista_productos = [ ]
+while True:
+
+    print("""
+Menú de opciones:
+    1. Alta de producto
+    2. Motrar productos
+    3. Buscar productos
+    4. Eliminar productos
+    5. Salir
+""")
+    opcion = input("Ingrese su opción: ") # Usuario ingresa su opciónS
+    # Procesamiento
+    match opcion :
+        case "1": 
+            # Aqui desarrollar código para el alta de productos
+            print("Procesando alta de productos...")
+            while True:
+                exit = input("Ingrese Fin para salir o ENTER para continuar: ").capitalize()
+                if exit == "Fin":
+                  break
+                nombre = str(input("Ingrese nombre del producto: ").strip().capitalize())
+                if nombre == "":
+                   print("El nombre del producto no puede estar vacio")
+                   continue
+            
+                categoria = str(input("Ingrese categoria del producto: ").strip().capitalize())
+                if categoria == "":
+                   print("La categoria no puede estar vacia")
+                   continue
+            
+                precio = (input("Ingrese el precio del producto: ").strip())
+                if precio == "":
+                   print("El precio no puede estar vacio")
+                   continue
+                if not precio.isdigit():
+                   print("El precio debe ser nro entero")
+                   continue
+                precio = int(precio)
+                
+                productos = [nombre, categoria, precio]
+                lista_productos.append(productos)
+        case "2":
+            print("Procesando mostrar productos...")
+            id_producto = range(len(lista_productos))
+            print("\n" + "-"*46)
+            print(" Visualización de productos registrados")
+            print("-"*46)
+            print(f"Numero\t Nombre\t Categoria\t Precio")
+            print("-"*46)
+            for id in id_producto:
+                producto = lista_productos[id]
+                print(f"\n {id}\t {producto[0]}\t {producto[1]}\t {producto[2]}")
+        case "3":
+            # Aqui desarrollar código para buscar productos
+            producto_a_buscar = input(f"Ingrese el producto que desea buscar: ").strip().capitalize()
+
+            encontrados = [ ]
+            for producto in lista_productos:
+                if producto_a_buscar in producto:
+                    encontrados.append(producto)
+            
+            count_encontrados = len(encontrados)
+            if count_encontrados == 0:
+                print(f"No se encontraron resultados.")
+            else:
+                id_encontrado = range(len(encontrados))
+                for id in id_encontrado:
+                    producto = encontrados[id]
+                    print("\n" + "-"*46)
+                    print(" Visualización de productos registrados")
+                    print("-"*46)
+                    print(f"Numero\t Nombre\t Categoria\t Precio")
+                    print("-"*46)
+                    print(f"\n {id} \t {producto[0]}\t {producto[1]}\t {producto[2]}")
+        case "4":
+            # Aqui desarrollar código para eliminar productos
+            indice_eliminar = int(input("Ingrese el indice del producto a eliminar: "))
+            lista_productos.pop(indice_eliminar)
+            print("Producto eliminado exitosamente")
+        case "5":
+            print("Saliendo...")
+            break
+        case _:
+            print("Opcion incorrecta")
+
+print("Gracias por usar mi App")
+Contraer
+consigna_pre_entrega.py
+4 KB
+esta todo hecho con lo que nos dieron en los modulos hasta el nro 07, nada fuera de la documentacion
+a los print no les puse mucho esmero, imprime la info necesaria!
