@@ -1,142 +1,153 @@
-¡Excelente! Has hecho un gran trabajo al implementar las funcionalidades básicas para tu gestión de productos en Python. El código está bastante completo y bien estructurado para un estudiante inicial.
+# Declaracion de variables (Globales)
 
-Aquí te detallo cómo las opciones del menú funcionan con tu lista_productos:
+# Declaramos la lista de productos, que va a almacenar los siguientes datos
+# nombre, categoria, precio
+# La inicializamos con algunos datos para poder testear la opcion 2 - Mostrar productos
 
-Explicación de las Opciones del Menú
-1. Alta de Producto
-Esta sección está bien desarrollada. Permite al usuario ingresar el nombre, categoría y precio de un nuevo producto. Incluye validaciones para asegurar que los campos no estén vacíos y que el precio sea un número entero. Una vez que se ingresan los datos correctamente, el producto se agrega a lista_productos como una nueva sublista.
+lista_productos = [
+    ["aereo", "turismo", 1800], 
+    ["hotel", "turismo", 2500],
+    ["excursiones","turismo", 800]
+]
+while True:
+    print("""
+          
+Menú de opciones:
+    1. Alta de producto
+    2. Mostrar productos
+    3. Buscar productos
+    4. Eliminar productos
+    5. Salir
+""")
+    opcion = input("Ingrese su opción: ") # Usuario ingresa su opción
 
-Python
 
-# ... (código existente)
-case "1":
-    print("Procesando alta de productos...")
-    while True:
-        exit_input = input("Ingrese Fin para salir o ENTER para continuar: ").strip().capitalize()
-        if exit_input == "Fin":
-            break
+    # Procesamiento
+    match opcion :
+        case "1":
+            # Aqui desarrollar código para el alta de productos
+            # Ingreso de datos del producto
+            # nombre, categoría, y precio
+            # Nota: valiamos nombre, categoria y precio
+           print("Procesando alta de productos...")
+           while True:
+                exit_input = input("Ingrese Fin para salir o ENTER para continuar: ").strip().capitalize()
+                if exit_input == "Fin":
+                    break
 
-        nombre = input("Ingrese nombre del producto: ").strip().capitalize()
-        if not nombre:
-            print("El nombre del producto no puede estar vacío.")
-            continue
+                # Validación para el nombre del producto
+                while True:
+                    nombre = input("Ingrese nombre del producto: ").strip().capitalize()
+                    if nombre:
+                        break # Sale del bucle si el nombre no está vacío
+                    else:
+                        print("El nombre del producto no puede estar vacío. Intente de nuevo.")
 
-        categoria = input("Ingrese categoría del producto: ").strip().capitalize()
-        if not categoria:
-            print("La categoría no puede estar vacía.")
-            continue
+                # Validación para la categoría del producto
+                while True:
+                    categoria = input("Ingrese categoría del producto: ").strip().capitalize()
+                    if categoria:
+                        break # Sale del bucle si la categoría no está vacía
+                    else:
+                        print("La categoría no puede estar vacía. Intente de nuevo.")
 
-        precio_input = input("Ingrese el precio del producto: ").strip()
-        if not precio_input:
-            print("El precio no puede estar vacío.")
-            continue
-        if not precio_input.isdigit():
-            print("El precio debe ser un número entero.")
-            continue
+                # Validación para el precio del producto
+                while True:
+                    precio_input = input("Ingrese el precio del producto: ").strip()
+                    if not precio_input:
+                        print("El precio no puede estar vacío. Intente de nuevo.")
+                    elif not precio_input.isdigit():
+                        print("El precio debe ser un número entero. Intente de nuevo.")
+                    else:
+                        precio = int(precio_input)
+                        if precio <= 0:
+                            print("El precio debe ser un número positivo. Intente de nuevo.")
+                        else:
+                            break # Sale del bucle si el precio es un número entero positivo
+                
+                productos = [nombre, categoria, precio]
+                lista_productos.append(productos)
+                print(f"Producto '{nombre}' agregado exitosamente.")
 
-        precio = int(precio_input)
+    
+        case "2":
+            print("Procesando mostrar productos...")
+            if not lista_productos: # Verifica si la lista está vacía
+                print("No hay productos registrados para mostrar.")
+            else:
+                print("\n" + "-"*50) # Ajustado el ancho para mejor visualización
+                print("         Visualización de productos registrados")
+                print("-"*50)
+                print(f"Número\t Nombre\t\t Categoría\t Precio") # Agregado tabulaciones para alinear
+                print("-"*50)
+                for id, producto in enumerate(lista_productos): # Usa enumerate para obtener el índice y el producto
+                    # Ajusta la alineación para que se vea mejor
+                    print(f" {id}\t {producto[0]:<15}\t {producto[1]:<10}\t {producto[2]}") 
+                print("-" * 50) # Línea de cierre
+                
+        case "3":
+            print("Procesando búsqueda de productos...")
+            if not lista_productos:
+                print("No hay productos para buscar.")
+                continue
 
-        productos = [nombre, categoria, precio]
-        lista_productos.append(productos)
-        print(f"Producto '{nombre}' agregado exitosamente.")
-# ... (código existente)
-2. Mostrar Productos
-Esta opción recorre la lista_productos y muestra cada producto con su número (índice), nombre, categoría y precio. Utiliza enumerate para obtener un índice para cada producto, lo cual es útil para que el usuario pueda referenciarlos. También maneja el caso en que la lista esté vacía. La forma en que formateas la salida con tabulaciones y líneas divisorias mejora la legibilidad.
+            producto_a_buscar = input("Ingrese el nombre, categoría o precio (número) del producto que desea buscar: ").strip().capitalize()
+            
+            encontrados = []
+            for producto in lista_productos:
+                nombre, categoria, precio = producto[0], producto[1], producto[2]
 
-Python
+                # Busca en nombre, categoría o si el precio coincide (convirtiendo a str para la búsqueda)
+                if producto_a_buscar in producto[0] or \
+                   producto_a_buscar in producto[1] or \
+                   (producto_a_buscar.isdigit() and int(producto_a_buscar) == producto[2]):
+                    encontrados.append(producto)
+            
+            if not encontrados: # Si la lista de encontrados está vacía
+                print(f"No se encontraron resultados para '{producto_a_buscar}'.")
+            else:
+                print("\n" + "-"*50)
+                print("         Resultados de la búsqueda")
+                print("-"*50)
+                print(f"Número\t Nombre\t\t Categoría\t Precio")
+                print("-"*50)
+                for id, producto in enumerate(encontrados):
+                    print(f" {id}\t {producto[0]:<15}\t {producto[1]:<10}\t {producto[2]}")
+                print("-" * 50)
 
-# ... (código existente)
-case "2":
-    print("Procesando mostrar productos...")
-    if not lista_productos:
-        print("No hay productos registrados para mostrar.")
-    else:
-        print("\n" + "-"*50)
-        print("           Visualización de productos registrados")
-        print("-"*50)
-        print(f"Número\t Nombre\t\t Categoría\t Precio")
-        print("-"*50)
-        for id, producto in enumerate(lista_productos):
-            print(f" {id}\t {producto[0]:<15}\t {producto[1]:<10}\t {producto[2]}")
-        print("-" * 50)
-# ... (código existente)
-3. Buscar Productos
-Esta función permite al usuario buscar productos por nombre, categoría o precio. Itera sobre lista_productos y verifica si el término de búsqueda está presente en cualquiera de esos campos. Si se encuentran coincidencias, las muestra al usuario. Es robusta al permitir la búsqueda por precio numérico también.
+        case "4":
+            print("Procesando eliminación de productos...")
+            if not lista_productos:
+                print("No hay productos para eliminar.")
+                continue
 
-Python
+            # Primero mostramos los productos para que el usuario sepa qué eliminar
+            print("\nProductos actuales:")
+            for id, producto in enumerate(lista_productos):
+                print(f" {id}. {producto[0]} ({producto[1]}) - ${producto[2]}")
+            
+            try:
+                indice_eliminar_str = input("Ingrese el número del producto a eliminar: ").strip()
+                if not indice_eliminar_str.isdigit():
+                    print("Por favor, ingrese un número válido.")
+                    continue 
+                
+                indice_eliminar = int(indice_eliminar_str)
+                 
+                if 0 <= indice_eliminar < len(lista_productos): # Validamos el índice
+                    producto_eliminado = lista_productos.pop(indice_eliminar)
+                    print(f"Producto '{producto_eliminado[0]}' eliminado exitosamente.")
+                else:
+                    print("Número de producto inválido. Intente de nuevo.")
+            except ValueError:
+                print("Entrada inválida. Por favor, ingrese un número.")
+            
+        case "5":
+            print("Saliendo...")
+            break # Sale del bucle while True
 
-# ... (código existente)
-case "3":
-    print("Procesando búsqueda de productos...")
-    if not lista_productos:
-        print("No hay productos para buscar.")
-        continue
+        case _: # Opción por defecto para cualquier otra entrada
+            print("Opción incorrecta. Por favor, elija una opción válida (1-5).")
 
-    producto_a_buscar = input("Ingrese el nombre, categoría o precio (número) del producto que desea buscar: ").strip().capitalize()
+print("Gracias por usar mi App. ¡Hasta pronto!")
 
-    encontrados = []
-    for producto in lista_productos:
-        if producto_a_buscar in producto[0] or \
-           producto_a_buscar in producto[1] or \
-           (producto_a_buscar.isdigit() and int(producto_a_buscar) == producto[2]):
-            encontrados.append(producto)
-
-    if not encontrados:
-        print(f"No se encontraron resultados para '{producto_a_buscar}'.")
-    else:
-        print("\n" + "-"*50)
-        print("           Resultados de la búsqueda")
-        print("-"*50)
-        print(f"Número\t Nombre\t\t Categoría\t Precio")
-        print("-"*50)
-        for id, producto in enumerate(encontrados):
-            print(f" {id}\t {producto[0]:<15}\t {producto[1]:<10}\t {producto[2]}")
-        print("-" * 50)
-# ... (código existente)
-4. Eliminar Productos
-Para eliminar un producto, primero muestra todos los productos disponibles con sus índices. Luego, le pide al usuario que ingrese el número (índice) del producto que desea eliminar. Incluye un manejo de errores para asegurarse de que el usuario ingrese un número y que este número corresponda a un índice válido dentro de la lista. Si es válido, utiliza pop() para remover el producto.
-
-Python
-
-# ... (código existente)
-case "4":
-    print("Procesando eliminación de productos...")
-    if not lista_productos:
-        print("No hay productos para eliminar.")
-        continue
-
-    print("\nProductos actuales:")
-    for id, producto in enumerate(lista_productos):
-        print(f" {id}. {producto[0]} ({producto[1]}) - ${producto[2]}")
-
-    try:
-        indice_eliminar_str = input("Ingrese el número del producto a eliminar: ").strip()
-        if not indice_eliminar_str.isdigit():
-            print("Por favor, ingrese un número válido.")
-            continue
-
-        indice_eliminar = int(indice_eliminar_str)
-
-        if 0 <= indice_eliminar < len(lista_productos):
-            producto_eliminado = lista_productos.pop(indice_eliminar)
-            print(f"Producto '{producto_eliminado[0]}' eliminado exitosamente.")
-        else:
-            print("Número de producto inválido. Intente de nuevo.")
-    except ValueError:
-        print("Entrada inválida. Por favor, ingrese un número.")
-# ... (código existente)
-5. Salir
-Esta opción simplemente sale del bucle principal while True utilizando break, terminando la ejecución del programa.
-
-Python
-
-# ... (código existente)
-case "5":
-    print("Saliendo...")
-    break
-# ... (código existente)
-Tu código es un excelente punto de partida para entender cómo manipular listas en Python y cómo construir un menú interactivo. Sigue practicando y explorando nuevas funcionalidades.
-
-¿Hay algo más que te gustaría agregar o modificar en tu sistema de gestión de productos?
-
-Pídele a Gemini que escriba un documento o código que puedes editar
