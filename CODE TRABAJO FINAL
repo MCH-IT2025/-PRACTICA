@@ -1,0 +1,366 @@
+import sqlite3
+from colorama import init, Fore, Style
+
+# Inicializar colorama para que funcione en diferentes terminales
+init(autoreset=True)
+
+# Nombre de la base de datos
+DB_NAME = 'inventario.db'
+
+def conectar_db():
+    """
+    Establece una conexión con la base de datos SQLite.
+    Si la base de datos no existe, la crea.
+    Retorna el objeto de conexión y el cursor.
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        return conn, cursor
+    except sqlite3.Error as e:
+        print(f"{Fore.RED}Error al conectar a la base de datos: {e}{Style.RESET_ALL}")
+        return None, None
+
+def crear_tabla():
+    """
+    Crea la tabla 'productos' si no existe en la base de datos.
+    Define los campos: id, nombre, descripcion, cantidad, precio, categoria.
+    """
+    conn, cursor = conectar_db()
+    if conn and cursor:
+        try:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS productos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT NOT NULL,
+                    descripcion TEXT,
+                    cantidad INTEGER NOT NULL,
+                    precio REAL NOT NULL,
+                    categoria TEXT
+                )
+            ''')
+            conn.commit()
+            print(f"{Fore.GREEN}Tabla 'productos' verificada/creada exitosamente.{Style.RESET_ALL}")
+        except sqlite3.Error as e:
+            print(f"{Fore.RED}Error al crear la tabla: {e}{Style.RESET_ALL}")
+        finally:
+            conn.close()
+
+def alta_producto():
+    """
+    Permite al usuario ingresar los datos de un nuevo producto
+    y lo registra en la base de datos.
+    Valida que los campos obligatorios no estén vacíos y que cantidad/precio sean números válidos.
+    """
+    print(f"\n{Fore.CYAN}--- ALTA DE PRODUCTO ---{Style.RESET_ALL}")
+    while True:
+        nombre = input("Ingrese nombre del producto (o 'fin' para salir): ").strip()
+        if nombre.lower() == 'fin':
+            break
+        if not nombre:
+            print(f"{Fore.YELLOW}El nombre no puede estar vacío. Intente de nuevo.{Style.RESET_ALL}")
+            continue
+
+        descripcion = input("Ingrese descripción del producto: ").strip()
+
+        while True:
+            cantidad_str = input("Ingrese cantidad disponible: ").strip()
+            if not cantidad_str.isdigit():
+                print(f"{Fore.YELLOW}La cantidad debe ser un número entero. Intente de nuevo.{Style.RESET_ALL}")
+            else:
+                cantidad = int(cantidad_str)
+                if cantidad < 0:
+                    print(f"{Fore.YELLOW}La cantidad no puede ser negativa. Intente de nuevo.{Style.RESET_ALL}")
+                else:
+                    break
+
+        while True:
+            precio_str = input("Ingrese precio del producto: ").strip()
+            try:
+                precio = float(precio_str)
+                if precio <= 0:
+                    print(f"{Fore.YELLOW}El precio debe ser un número positivo. Intente de nuevo.{Style.RESET_ALL}")
+                else:
+                    break
+            except ValueError:
+                print(f"{Fore.YELLOW}El precio debe ser un número (ej. 100 o 100.50). Intente de nuevo.{Style.RESET_ALL}")
+
+        categoria = input("Ingrese categoría del producto: ").strip()
+
+        conn, cursor = conectar_db()
+        if conn and cursor:
+            try:
+                cursor.execute('''
+                    INSERT INTO productos (nombre, descripcion, cantidad, precio, categoria)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (nombre, descripcion, cantidad, precio, categoria))
+                conn.commit()
+                print(f"{Fore.GREEN}Producto '{nombre}' agregado exitosamente con ID: {cursor.lastrowid}.{Style.RESET_ALL}")
+            except sqlite3.Error as e:
+                print(f"{Fore.RED}Error al agregar producto: {e}{Style.RESET_ALL}")
+            finally:
+                conn.close()
+        break # Sale del bucle después de agregar un producto o si el usuario ingresa 'fin'
+
+def mostrar_productos(productos_a_mostrar=None, titulo="PRODUCTOS REGISTRADOS"):
+    """
+    Muestra los productos en un formato tabular.
+    Puede mostrar todos los productos o una lista específica de productos (ej. resultados de búsqueda).
+    """
+    if productos_a_mostrar is None:
+        conn, cursor = conectar_db()
+        if conn and cursor:
+            try:
+                cursor.execute("SELECT id, nombre, descripcion, cantidad, precio, categoria FROM productos")
+                productos = cursor.fetchall()
+            except sqlite3.Error as e:
+                print(f"{Fore.RED}Error al obtener productos: {e}{Style.RESET_ALL}")
+                productos = []
+            finally:
+                conn.close()
+        else:
+            productos = []
+    else:
+        productos = productos_a_mostrar
+
+    if not productos:
+        print(f"{Fore.YELLOW}No hay productos para mostrar.{Style.RESET_ALL}")
+        return
+
+    print(f"\n{Fore.BLUE}{'-'*80}{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{titulo.center(80)}{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{'-'*80}{Style.RESET_ALL}")
+    print(f"{Fore.GREEN}{'ID':<5} {'Nombre':<20} {'Descripción':<25} {'Cant.':<7} {'Precio':<10} {'Categoría':<15}{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{'-'*80}{Style.RESET_ALL}")
+
+    for prod in productos:
+        print(f"{prod[0]:<5} {prod[1]:<20} {prod[2]:<25} {prod[3]:<7} {prod[4]:<10.2f} {prod[5]:<15}")
+    print(f"{Fore.BLUE}{'-'*80}{Style.RESET_ALL}")
+
+def actualizar_cantidad_producto():
+    """
+    Permite al usuario actualizar la cantidad de un producto existente
+    buscándolo por su ID.
+    """
+    print(f"\n{Fore.CYAN}--- ACTUALIZAR CANTIDAD DE PRODUCTO ---{Style.RESET_ALL}")
+    mostrar_productos() # Muestra los productos para que el usuario vea los IDs
+
+    if not hay_productos(): # Verifica si hay productos antes de pedir ID
+        return
+
+    while True:
+        try:
+            producto_id_str = input("Ingrese el ID del producto a actualizar (o 'fin' para salir): ").strip()
+            if producto_id_str.lower() == 'fin':
+                break
+            producto_id = int(producto_id_str)
+            if producto_id <= 0:
+                print(f"{Fore.YELLOW}El ID debe ser un número positivo. Intente de nuevo.{Style.RESET_ALL}")
+                continue
+
+            nueva_cantidad_str = input("Ingrese la nueva cantidad: ").strip()
+            if not nueva_cantidad_str.isdigit():
+                print(f"{Fore.YELLOW}La cantidad debe ser un número entero. Intente de nuevo.{Style.RESET_ALL}")
+                continue
+            nueva_cantidad = int(nueva_cantidad_str)
+            if nueva_cantidad < 0:
+                print(f"{Fore.YELLOW}La cantidad no puede ser negativa. Intente de nuevo.{Style.RESET_ALL}")
+                continue
+
+            conn, cursor = conectar_db()
+            if conn and cursor:
+                try:
+                    cursor.execute("UPDATE productos SET cantidad = ? WHERE id = ?", (nueva_cantidad, producto_id))
+                    conn.commit()
+                    if cursor.rowcount > 0:
+                        print(f"{Fore.GREEN}Cantidad del producto con ID {producto_id} actualizada exitosamente.{Style.RESET_ALL}")
+                    else:
+                        print(f"{Fore.YELLOW}No se encontró ningún producto con ID {producto_id}.{Style.RESET_ALL}")
+                except sqlite3.Error as e:
+                    print(f"{Fore.RED}Error al actualizar producto: {e}{Style.RESET_ALL}")
+                finally:
+                    conn.close()
+            break # Sale del bucle después de actualizar o si el usuario ingresa 'fin'
+        except ValueError:
+            print(f"{Fore.YELLOW}Entrada inválida. Por favor, ingrese un número entero para el ID y la cantidad.{Style.RESET_ALL}")
+
+def eliminar_producto():
+    """
+    Permite al usuario eliminar un producto de la base de datos
+    buscándolo por su ID.
+    """
+    print(f"\n{Fore.CYAN}--- ELIMINAR PRODUCTO ---{Style.RESET_ALL}")
+    mostrar_productos() # Muestra los productos para que el usuario vea los IDs
+
+    if not hay_productos(): # Verifica si hay productos antes de pedir ID
+        return
+
+    while True:
+        try:
+            producto_id_str = input("Ingrese el ID del producto a eliminar (o 'fin' para salir): ").strip()
+            if producto_id_str.lower() == 'fin':
+                break
+            producto_id = int(producto_id_str)
+            if producto_id <= 0:
+                print(f"{Fore.YELLOW}El ID debe ser un número positivo. Intente de nuevo.{Style.RESET_ALL}")
+                continue
+
+            conn, cursor = conectar_db()
+            if conn and cursor:
+                try:
+                    cursor.execute("DELETE FROM productos WHERE id = ?", (producto_id,))
+                    conn.commit()
+                    if cursor.rowcount > 0:
+                        print(f"{Fore.GREEN}Producto con ID {producto_id} eliminado exitosamente.{Style.RESET_ALL}")
+                    else:
+                        print(f"{Fore.YELLOW}No se encontró ningún producto con ID {producto_id}.{Style.RESET_ALL}")
+                except sqlite3.Error as e:
+                    print(f"{Fore.RED}Error al eliminar producto: {e}{Style.RESET_ALL}")
+                finally:
+                    conn.close()
+            break # Sale del bucle después de eliminar o si el usuario ingresa 'fin'
+        except ValueError:
+            print(f"{Fore.YELLOW}Entrada inválida. Por favor, ingrese un número entero para el ID.{Style.RESET_ALL}")
+
+def buscar_productos():
+    """
+    Permite al usuario buscar productos por ID, nombre o categoría.
+    Muestra los resultados coincidentes.
+    """
+    print(f"\n{Fore.CYAN}--- BUSCAR PRODUCTOS ---{Style.RESET_ALL}")
+    if not hay_productos():
+        print(f"{Fore.YELLOW}No hay productos en el inventario para buscar.{Style.RESET_ALL}")
+        return
+
+    criterio = input("Buscar por (ID, Nombre, Categoría): ").strip().lower()
+    valor = input(f"Ingrese el valor a buscar para '{criterio}': ").strip()
+
+    conn, cursor = conectar_db()
+    productos_encontrados = []
+    if conn and cursor:
+        try:
+            if criterio == 'id':
+                if not valor.isdigit():
+                    print(f"{Fore.YELLOW}Para buscar por ID, ingrese un número válido.{Style.RESET_ALL}")
+                    return
+                cursor.execute("SELECT id, nombre, descripcion, cantidad, precio, categoria FROM productos WHERE id = ?", (int(valor),))
+            elif criterio == 'nombre':
+                cursor.execute("SELECT id, nombre, descripcion, cantidad, precio, categoria FROM productos WHERE nombre LIKE ?", (f'%{valor}%',))
+            elif criterio == 'categoría':
+                cursor.execute("SELECT id, nombre, descripcion, cantidad, precio, categoria FROM productos WHERE categoria LIKE ?", (f'%{valor}%',))
+            else:
+                print(f"{Fore.YELLOW}Criterio de búsqueda inválido. Opciones: ID, Nombre, Categoría.{Style.RESET_ALL}")
+                return
+
+            productos_encontrados = cursor.fetchall()
+
+        except sqlite3.Error as e:
+            print(f"{Fore.RED}Error al buscar productos: {e}{Style.RESET_ALL}")
+        finally:
+            conn.close()
+
+    if productos_encontrados:
+        mostrar_productos(productos_encontrados, titulo=f"RESULTADOS DE BÚSQUEDA PARA '{valor}'")
+    else:
+        print(f"{Fore.YELLOW}No se encontraron productos que coincidan con '{valor}' en el criterio '{criterio}'.{Style.RESET_ALL}")
+
+def reporte_bajo_stock():
+    """
+    Genera un reporte de productos con una cantidad igual o inferior
+    a un límite especificado por el usuario.
+    """
+    print(f"\n{Fore.CYAN}--- REPORTE DE BAJO STOCK ---{Style.RESET_ALL}")
+    if not hay_productos():
+        print(f"{Fore.YELLOW}No hay productos en el inventario para generar un reporte.{Style.RESET_ALL}")
+        return
+
+    while True:
+        limite_str = input("Ingrese el límite de stock para el reporte: ").strip()
+        if not limite_str.isdigit():
+            print(f"{Fore.YELLOW}El límite de stock debe ser un número entero. Intente de nuevo.{Style.RESET_ALL}")
+        else:
+            limite = int(limite_str)
+            if limite < 0:
+                print(f"{Fore.YELLOW}El límite de stock no puede ser negativo. Intente de nuevo.{Style.RESET_ALL}")
+            else:
+                break
+
+    conn, cursor = conectar_db()
+    productos_bajo_stock = []
+    if conn and cursor:
+        try:
+            cursor.execute("SELECT id, nombre, descripcion, cantidad, precio, categoria FROM productos WHERE cantidad <= ?", (limite,))
+            productos_bajo_stock = cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"{Fore.RED}Error al generar reporte de bajo stock: {e}{Style.RESET_ALL}")
+        finally:
+            conn.close()
+
+    if productos_bajo_stock:
+        mostrar_productos(productos_bajo_stock, titulo=f"PRODUCTOS CON STOCK IGUAL O INFERIOR A {limite}")
+    else:
+        print(f"{Fore.GREEN}¡Excelente! No hay productos con stock igual o inferior a {limite}.{Style.RESET_ALL}")
+
+def hay_productos():
+    """
+    Verifica si hay productos en la base de datos.
+    Retorna True si hay al menos un producto, False en caso contrario.
+    """
+    conn, cursor = conectar_db()
+    if conn and cursor:
+        try:
+            cursor.execute("SELECT COUNT(*) FROM productos")
+            count = cursor.fetchone()[0]
+            return count > 0
+        except sqlite3.Error as e:
+            print(f"{Fore.RED}Error al verificar productos: {e}{Style.RESET_ALL}")
+            return False
+        finally:
+            conn.close()
+    return False
+
+def main():
+    """
+    Función principal que ejecuta el menú de la aplicación.
+    """
+    crear_tabla() # Asegura que la tabla exista al iniciar la aplicación
+
+    while True:
+        print(f"""
+{Fore.YELLOW}--------------------------------------------------{Style.RESET_ALL}
+{Fore.YELLOW}               MENÚ DE INVENTARIO                 {Style.RESET_ALL}
+{Fore.YELLOW}--------------------------------------------------{Style.RESET_ALL}
+{Fore.GREEN}1.{Style.RESET_ALL} {Fore.WHITE}Alta de producto{Style.RESET_ALL}
+{Fore.GREEN}2.{Style.RESET_ALL} {Fore.WHITE}Mostrar productos{Style.RESET_ALL}
+{Fore.GREEN}3.{Style.RESET_ALL} {Fore.WHITE}Buscar productos{Style.RESET_ALL}
+{Fore.GREEN}4.{Style.RESET_ALL} {Fore.WHITE}Actualizar cantidad de producto{Style.RESET_ALL}
+{Fore.GREEN}5.{Style.RESET_ALL} {Fore.WHITE}Eliminar productos{Style.RESET_ALL}
+{Fore.GREEN}6.{Style.RESET_ALL} {Fore.WHITE}Reporte de bajo stock{Style.RESET_ALL}
+{Fore.RED}7.{Style.RESET_ALL} {Fore.WHITE}Salir{Style.RESET_ALL}
+{Fore.YELLOW}--------------------------------------------------{Style.RESET_ALL}
+        """)
+        opcion = input(f"{Fore.CYAN}Ingrese su opción: {Style.RESET_ALL}").strip()
+
+        # Procesamiento de la opción seleccionada
+        match opcion:
+            case "1":
+                alta_producto()
+            case "2":
+                mostrar_productos()
+            case "3":
+                buscar_productos()
+            case "4":
+                actualizar_cantidad_producto()
+            case "5":
+                eliminar_producto()
+            case "6":
+                reporte_bajo_stock()
+            case "7":
+                print(f"{Fore.MAGENTA}Saliendo... ¡Gracias por usar la aplicación!{Style.RESET_ALL}")
+                break # Sale del bucle while True
+            case _: # Opción por defecto para cualquier otra entrada
+                print(f"{Fore.RED}Opción incorrecta. Por favor, elija una opción válida (1-7).{Style.RESET_ALL}")
+
+# Punto de entrada principal del programa
+if __name__ == "__main__":
+    main()
